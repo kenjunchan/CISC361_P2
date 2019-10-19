@@ -85,16 +85,21 @@ int sh( int argc, char **argv, char **envp )
 		}
 		else if (!strcmp(args[0],"which"))
     {
-			char* path=which(args[0],pathlist);
-			if (path)
-      {
-				printf("%s\n",path);
-				free(path);
+			char *path = which(args[1], pathlist);
+			if (args[1] == NULL)
+			{
+				printf("not enough arguments\n");
 			}
-			else 
-      {
-        printf("WHICH COMMAND NOT FOUND\n");
-      }
+			else
+			{
+				if (path)
+				{
+					printf("%s\n", path);
+					free(path);
+				}
+				else
+					printf("Could Not Find: %s\n", args[0]);
+			}
 		}
 		else if (!strcmp(args[0],"where"))
     {
@@ -155,15 +160,13 @@ char *which(char *command, struct pathelement *pathlist )
    /* loop through pathlist until finding command and return it.  Return
    NULL when not found. */
   char* cmd = (char *)malloc(BUFFERSIZE);
-  strcpy(cmd, command);
-
+ 
   while (pathlist) 
   {         // WHICH
     sprintf(cmd, "%s/%s", pathlist->element, command);
     if (access(cmd, X_OK) == 0) 
     {
       return cmd;
-      free(cmd);
     }
     pathlist = pathlist->next;
   }
@@ -180,7 +183,7 @@ char *where(char *command, struct pathelement *pathlist )
   while (pathlist)
   {
     sprintf(cmds, "%s/%s", pathlist->element, all);
-    printf("command: %s\n", cmds);
+    printf("%s\n", cmds);
     if (access(cmds, F_OK) == 0)
     {
       sprintf(command, "%s", cmds);
