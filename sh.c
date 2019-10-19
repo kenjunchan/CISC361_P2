@@ -98,21 +98,26 @@ int sh( int argc, char **argv, char **envp )
 					free(path);
 				}
 				else
-					printf("Could Not Find: %s\n", args[0]);
+					printf("%s %s: not found\n", args[0], args[1]);
 			}
 		}
 		else if (!strcmp(args[0],"where"))
     {
-        char* path=where(args[0], pathlist);
-        if (path)
-        {
-          printf("%s\n", path);
-          free(path);
-        }
-        else
-        {
-          printf("WHERE COMMAND NOT FOUND\n");
-        }
+      char *path = which(args[1], pathlist);
+			if (args[1] == NULL)
+			{
+				printf("not enough arguments\n");
+			}
+			else
+			{
+				if (path)
+				{
+					printf("%s\n", path);
+					free(path);
+				}
+				else
+					printf("%s %s: not found\n", args[0], args[1]);
+			}
         
     }
     else if (!strcmp(args[0],"pwd"))
@@ -160,9 +165,8 @@ char *which(char *command, struct pathelement *pathlist )
    /* loop through pathlist until finding command and return it.  Return
    NULL when not found. */
   char* cmd = (char *)malloc(BUFFERSIZE);
- 
   while (pathlist) 
-  {         // WHICH
+  { //WHICH
     sprintf(cmd, "%s/%s", pathlist->element, command);
     if (access(cmd, X_OK) == 0) 
     {
@@ -177,23 +181,16 @@ char *which(char *command, struct pathelement *pathlist )
 char *where(char *command, struct pathelement *pathlist )
 {
   /* similarly loop through finding all locations of command */
-  char *all = (char *)malloc(BUFFERSIZE);
-  strcpy(all, "");
-  char *cmds = (char *)malloc(BUFFERSIZE);
-  while (pathlist)
-  {
-    sprintf(cmds, "%s/%s", pathlist->element, all);
-    printf("%s\n", cmds);
-    if (access(cmds, F_OK) == 0)
-    {
-      sprintf(command, "%s", cmds);
-    }
-    pathlist = pathlist->next;
-  }
-  free(all);
-  free(cmds);
-  
-  return all;
+  char *result = malloc(BUFFERSIZE);
+	while (pathlist)
+	{ // WHERE
+		sprintf(result, "%s/%s", pathlist->element, command);
+		if (access(command, F_OK) == 0)
+			printf("[%s]\n", command);
+		pathlist = pathlist->next;
+	}
+	printf(command, ": command not found");
+	return NULL;
 } /* where() */
 
 void list ( char *dir )
