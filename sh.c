@@ -50,8 +50,7 @@ int sh( int argc, char **argv, char **envp )
 
   uid = getuid();
   password_entry = getpwuid(uid);               /* get passwd info */
-  homedir = password_entry->pw_dir;		/* Home directory to start
-						  out with*/
+  homedir = password_entry->pw_dir;		          /* Home directory to start out with*/
      
   if ( (pwd = getcwd(NULL, PATH_MAX+1)) == NULL )
   {
@@ -117,8 +116,7 @@ int sh( int argc, char **argv, char **envp )
 				}
 				else
 					printf("%s %s: not found\n", args[0], args[1]);
-			}
-        
+			}   
     }
     else if (!strcmp(args[0],"pwd"))
     {
@@ -205,30 +203,20 @@ void printWD()
 	getcwd(cwd, sizeof(cwd));
   printf("%s\n", cwd);
 }
-void getUserStr(char* str) {
-  char buffer[BUFFERSIZE];
-  int len, running;
-  running = 1;
-  while (running) {
-    if (fgets(buffer, BUFFERSIZE, stdin) != NULL) {
-      len = (int) strlen(buffer);
-      buffer[len - 1] = '\0';
-      strcpy(str, buffer);
-      running = 0;
-      #if debug
-      //printf("%s\t%s\n", Dbug, str);
-      #endif
-    }
-  }
-  return;
-}
 
-void newPromptPrefix(char *command, char *p) {
+void newPromptPrefix(char *command, char *p) 
+{
+  char buffer[BUFFERSIZE];
+  int len;
   if (command == NULL) 
   {
     command = malloc(sizeof(char) * PROMPTMAX);
     printf("Input new prompt prefix: ");
-    getUserStr(command);
+    if (fgets(buffer, BUFFERSIZE, stdin) != NULL) {
+    len = (int) strlen(buffer);
+    buffer[len - 1] = '\0';
+    strcpy(command, buffer);
+    }
     strcpy(p, command);
     free(command);
   }
