@@ -68,7 +68,7 @@ int sh( int argc, char **argv, char **envp )
   while ( go )
   {
     /* print your prompt */
-    printf("%s[%s]", prompt, pwd);
+    printf("%s%s$", prompt, pwd);
 
     /* get command line and process */
     char buffer[BUFFERSIZE];
@@ -78,12 +78,12 @@ int sh( int argc, char **argv, char **envp )
 
     inputToCharArray(buffer, args);
 
-    if (strcmp(args[0],"exit") == 0)
+    if (!strcmp(args[0],"exit"))
     {
-		  go=0;
       printf("EXITING\n");
+		  go=0;
 		}
-		else if (strcmp(args[0],"which") == 0)
+		else if (!strcmp(args[0],"which"))
     {
 			char* path=which(args[0],pathlist);
 			if (path)
@@ -91,11 +91,33 @@ int sh( int argc, char **argv, char **envp )
 				printf("%s\n",path);
 				free(path);
 			}
-			else printf("WHICH COMMAND NOT FOUND\n");
+			else 
+      {
+        printf("WHICH COMMAND NOT FOUND\n");
+      }
 		}
-		else if (strcmp(args[0],"where")==0){
-
-		}
+		else if (!strcmp(args[0],"where"))
+    {
+        char* path=where(args[0], pathlist);
+        if (path)
+        {
+          printf("%s\n", path);
+          free(path);
+        }
+        else
+        {
+          printf("WHERE COMMAND NOT FOUND\n");
+        }
+        
+    }
+    else if (!strcmp(args[0],"pwd"))
+    {
+      printWD();
+    }
+    else if(!strcmp(args[0],"prompt"))
+    {
+      newPromptPrefix(args[1],prompt);
+    }
 		else{
 			//call which to get the absolute path
 			char* cmd=which(args[0],pathlist);
@@ -132,7 +154,8 @@ char *which(char *command, struct pathelement *pathlist )
 {
    /* loop through pathlist until finding command and return it.  Return
    NULL when not found. */
-  char* cmd = malloc(BUFFERSIZE);
+  char* cmd = (char *)malloc(BUFFERSIZE);
+  strcpy(cmd, command);
 
   while (pathlist) 
   {         // WHICH
@@ -140,6 +163,7 @@ char *which(char *command, struct pathelement *pathlist )
     if (access(cmd, X_OK) == 0) 
     {
       return cmd;
+      free(cmd);
     }
     pathlist = pathlist->next;
   }
@@ -150,17 +174,23 @@ char *which(char *command, struct pathelement *pathlist )
 char *where(char *command, struct pathelement *pathlist )
 {
   /* similarly loop through finding all locations of command */
-  while (pathlist) 
-  {         // WHERE
-    sprintf(command, "%s/gcc", pathlist->element);
-    if (access(command, F_OK) == 0)
-    {    
-      printf("[%s]\n", command);
+  char *all = (char *)malloc(BUFFERSIZE);
+  strcpy(all, "");
+  char *cmds = (char *)malloc(BUFFERSIZE);
+  while (pathlist)
+  {
+    sprintf(cmds, "%s/%s", pathlist->element, all);
+    printf("command: %s\n", cmds);
+    if (access(cmds, F_OK) == 0)
+    {
+      sprintf(command, "%s", cmds);
     }
     pathlist = pathlist->next;
   }
-  printf (command,": Command not found.");
-  return NULL;
+  free(all);
+  free(cmds);
+  
+  return all;
 } /* where() */
 
 void list ( char *dir )
@@ -168,4 +198,68 @@ void list ( char *dir )
   /* see man page for opendir() and readdir() and print out filenames for
   the directory passed */
 } /* list() */
+
+void printWD()
+{
+	char cwd[PATH_MAX];
+	getcwd(cwd, sizeof(cwd));
+  printf("%s\n", cwd);
+}
+void getUserStr(char* str) {
+  char buffer[BUFFERSIZE];
+  int len, running;
+  running = 1;
+  while (running) {
+    if (fgets(buffer, BUFFERSIZE, stdin) != NULL) {
+      len = (int) strlen(buffer);
+      buffer[len - 1] = '\0';
+      strcpy(str, buffer);
+      running = 0;
+      #if debug
+      //printf("%s\t%s\n", Dbug, str);
+      #endif
+    }
+  }
+  return;
+}
+
+void newPromptPrefix(char *command, char *p) {
+  if (command == NULL) 
+  {
+    command = malloc(sizeof(char) * PROMPTMAX);
+    printf("Input new prompt prefix: ");
+    getUserStr(command);
+    strcpy(p, command);
+    free(command);
+  }
+  else 
+  {
+    strcpy(p, command);
+  }
+}
+
+/* void newPrompt(char *command, char *p)
+{
+  char buffer[BUFFERSIZE];
+  int len;
+  if(command==NULL)
+  {
+    command = malloc(sizeof(char)*PROMPTMAX);
+    printf("Input new prompt prefix: ");
+    if(fgets(buffer, BUFFERSIZE, stdin) != NULL)
+    {
+      len = (int) strlen(buffer);
+      buffer[len-1] = '\0';
+      strcpy(p, buffer);
+      strcpy(p, command);
+    }
+    else
+    {
+      strcpy(p, command);
+    }
+    
+  }
+  free(command);
+} */
+
 
