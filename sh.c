@@ -122,11 +122,20 @@ int sh( int argc, char **argv, char **envp )
     {
       printWD();
     }
+    else if(!strcmp(args[0],"list"))
+    {
+      
+    }
+    else if(!strcmp(args[0],"pid"))
+    {
+      printPID();
+    }
     else if(!strcmp(args[0],"prompt"))
     {
       newPromptPrefix(args[1],prompt);
     }
-		else{
+		else
+    {
 			//call which to get the absolute path
 			char* cmd=which(args[0],pathlist);
 			int pid=fork();
@@ -191,18 +200,39 @@ char *where(char *command, struct pathelement *pathlist )
 	return NULL;
 } /* where() */
 
-void list ( char *dir )
-{
-  /* see man page for opendir() and readdir() and print out filenames for
-  the directory passed */
-} /* list() */
-
 void printWD()
 {
 	char cwd[PATH_MAX];
 	getcwd(cwd, sizeof(cwd));
   printf("%s\n", cwd);
-}
+} /* printWD() */
+
+void list ( char *dir )
+{
+  /* see man page for opendir() and readdir() and print out filenames for
+  the directory passed */
+  DIR *dr;
+  struct dirent *de;
+  dr = opendir(dir);
+  if (dr == NULL) 
+  {
+    printf("Cannot open %s\n", dir);
+  } 
+  else 
+  {
+    while ((de = readdir(dr)) != NULL) 
+    {
+      printf("%s\n", de->d_name);
+    }
+  }
+  closedir(dr);
+} /* list() */
+
+void printPID()
+{
+  int pid = getpid();
+  printf("shell PID: %d\n", pid);
+} /* printPID() */
 
 void newPromptPrefix(char *command, char *p) 
 {
@@ -224,30 +254,4 @@ void newPromptPrefix(char *command, char *p)
   {
     strcpy(p, command);
   }
-}
-
-/* void newPrompt(char *command, char *p)
-{
-  char buffer[BUFFERSIZE];
-  int len;
-  if(command==NULL)
-  {
-    command = malloc(sizeof(char)*PROMPTMAX);
-    printf("Input new prompt prefix: ");
-    if(fgets(buffer, BUFFERSIZE, stdin) != NULL)
-    {
-      len = (int) strlen(buffer);
-      buffer[len-1] = '\0';
-      strcpy(p, buffer);
-      strcpy(p, command);
-    }
-    else
-    {
-      strcpy(p, command);
-    }
-    
-  }
-  free(command);
-} */
-
-
+} /* newPromptPrefix() */
