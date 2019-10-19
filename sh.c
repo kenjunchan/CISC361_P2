@@ -84,39 +84,63 @@ int sh( int argc, char **argv, char **envp )
 		}
 		else if (!strcmp(args[0],"which"))
     {
-			char *path = which(args[1], pathlist);
 			if (args[1] == NULL)
 			{
 				printf("not enough arguments\n");
 			}
 			else
 			{
-				if (path)
-				{
-					printf("%s\n", path);
-					free(path);
-				}
-				else
-					printf("%s %s: not found\n", args[0], args[1]);
+        for (int i = 1; i < MAXARGS; i++) 
+        {
+          if (args[i] != NULL)
+          {
+            char *path = which(args[i], pathlist);
+            if (path != NULL) 
+            {
+              printf("%s\n", path);
+              free(path);
+            } 
+            else 
+            {
+              printf("%s %s: not found\n", args[0], args[1]);
+            }
+          }
+          else
+          {
+            break;
+          }
+        }
 			}
 		}
 		else if (!strcmp(args[0],"where"))
     {
-      char *path = which(args[1], pathlist);
-			if (args[1] == NULL)
+      if (args[1] == NULL)
 			{
 				printf("not enough arguments\n");
 			}
 			else
 			{
-				if (path)
-				{
-					printf("%s\n", path);
-					free(path);
-				}
-				else
-					printf("%s %s: not found\n", args[0], args[1]);
-			}   
+        for (int i = 1; i < MAXARGS; i++) 
+        {
+          if (args[i] != NULL)
+          {
+            char *path = where(args[i], pathlist);
+            if (path != NULL) 
+            {
+              printf("%s\n", path);
+              free(path);
+            } 
+            else 
+            {
+              printf("%s %s: not found\n", args[0], args[1]);
+            }
+          }
+          else
+          {
+            break;
+          }
+        }   
+      } 
     }
     else if (!strcmp(args[0],"pwd"))
     {
@@ -171,6 +195,7 @@ char *which(char *command, struct pathelement *pathlist )
 {
    /* loop through pathlist until finding command and return it.  Return
    NULL when not found. */
+
   char* cmd = (char *)malloc(BUFFERSIZE);
   while (pathlist) 
   { //WHICH
@@ -188,16 +213,18 @@ char *which(char *command, struct pathelement *pathlist )
 char *where(char *command, struct pathelement *pathlist )
 {
   /* similarly loop through finding all locations of command */
-  char *result = malloc(BUFFERSIZE);
-	while (pathlist)
-	{ // WHERE
-		sprintf(result, "%s/%s", pathlist->element, command);
-		if (access(command, F_OK) == 0)
-			printf("[%s]\n", command);
-		pathlist = pathlist->next;
-	}
-	printf(command, ": command not found");
-	return NULL;
+  char* cmd = (char *)malloc(BUFFERSIZE);
+  while (pathlist) 
+  { //WHERE
+    sprintf(cmd, "%s/%s", pathlist->element, command);
+    if (access(cmd, F_OK) == 0) 
+    {
+      return cmd;
+    }
+    pathlist = pathlist->next;
+  }
+  free(cmd);
+  return NULL;
 } /* where() */
 
 void printWD()
