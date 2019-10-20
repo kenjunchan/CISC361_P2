@@ -79,14 +79,15 @@ int sh( int argc, char **argv, char **envp )
 
     if (!strcmp(args[0],"exit"))
     {
-      printf("EXITING\n");
+       printf("Executing built-in EXIT\n");
 		  go=0;
 		}
 		else if (!strcmp(args[0],"which"))
     {
+      printf("Executing built-in WHICH\n");
 			if (args[1] == NULL)
 			{
-				printf("not enough arguments\n");
+				printf("which: too few arguments\n");
 			}
 			else
 			{
@@ -114,9 +115,10 @@ int sh( int argc, char **argv, char **envp )
 		}
 		else if (!strcmp(args[0],"where"))
     {
+      printf("Executing built-in WHERE\n");
       if (args[1] == NULL)
 			{
-				printf("not enough arguments\n");
+				printf("where: too few arguments\n");
 			}
 			else
 			{
@@ -144,19 +146,42 @@ int sh( int argc, char **argv, char **envp )
     }
     else if (!strcmp(args[0],"pwd"))
     {
+      printf("Executing built-in PWD\n");
       printWD();
     }
     else if(!strcmp(args[0],"list"))
     {
-      
+      printf("Executing built-in LIST\n");
     }
     else if(!strcmp(args[0],"pid"))
     {
+      printf("Executing built-in PID\n");
       printPID();
     }
     else if(!strcmp(args[0],"prompt"))
     {
+      printf("Executing built-in PROMPT\n");
       newPromptPrefix(args[1],prompt);
+    }
+    else if(!strcmp(args[0],"printenv"))
+    {
+      printf("Executing built-in PRINTENV\n");
+      if (args[1] == NULL) 
+      { 
+        printenv(envp);
+      }
+      else if((args[1] != NULL) && (args[2] == NULL)) 
+      { 
+        printf("%s\n", getenv(args[1]));
+      }
+      else 
+      {
+        printf("printenv: too many arguments\n");
+      }
+    }
+    else if(!strcmp(args[0],"setenv"))
+    {
+      printf("Executing built-in SETENV\n");
     }
 		else
     {
@@ -282,3 +307,12 @@ void newPromptPrefix(char *command, char *p)
     strcpy(p, command);
   }
 } /* newPromptPrefix() */
+
+void printenv(char **envp)
+{
+  char **currEnv = envp;
+  while (*currEnv)
+  {
+    printf("%s \n", *(currEnv++));
+  }
+} /* printenv() */

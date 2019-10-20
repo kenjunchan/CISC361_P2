@@ -11,7 +11,7 @@ void printWD();
 void printPID();
 void newPromptPrefix(char *cmd, char *prompt);
 void printenv(char **envp);
-void getUserStr(char* str);
+void printenv_arg(char **arg);
 
 #define PROMPTMAX 32
 #define MAXARGS 10
