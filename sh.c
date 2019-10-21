@@ -158,6 +158,18 @@ int sh( int argc, char **argv, char **envp )
       printf("Executing built-in PID\n");
       printPID();
     }
+    else if(!strcmp(args[0],"kill"))
+    {
+      printf("Executing built-in KILL\n");
+      if (args[1] != NULL && args[2] == NULL)
+			{
+				killPID(atoi(args[1]), 0);
+			}
+			else if(args[1] != NULL && args[2] != NULL)
+      {
+				killPID(atoi(args[2]), -1*atoi(args[1]));
+			}
+    }
     else if(!strcmp(args[0],"prompt"))
     {
       printf("Executing built-in PROMPT\n");
@@ -176,19 +188,48 @@ int sh( int argc, char **argv, char **envp )
       }
       else 
       {
+        perror("printenv");
         printf("printenv: too many arguments\n");
       }
     }
     else if(!strcmp(args[0],"setenv"))
     {
       printf("Executing built-in SETENV\n");
+      if(args[1] == NULL)
+      {
+        printenv(envp);
+      }
+      else if((args[1] != NULL) && (args[2] == NULL)) 
+      { 
+        printf("%s\n", setenv(args[1], "",1));
+      }
+      else if(args[1] != NULL && args[2] != NULL) 
+      {
+        setenv(args[1],args[2],1);
+
+				if(!strcmp(args[1],"PATH")) 
+        {
+					free(pathlist);
+					pathlist = get_path();
+				}
+				if (strcmp(args[1], "HOME") == 0) 
+        {
+					homedir = getenv("HOME");
+				}
+			}
+      else 
+      { 
+				perror("setenv");
+				printf("setenv: too many arguments\n");
+			}
     }
 		else
     {
 			//call which to get the absolute path
 			char* cmd=which(args[0],pathlist);
 			int pid=fork();
-			if (pid){
+			if (pid)
+      {
 				free(cmd);
 				waitpid(pid,NULL,0);
 			}
@@ -286,6 +327,17 @@ void printPID()
   printf("shell PID: %d\n", pid);
 } /* printPID() */
 
+void killPID(pid_t pid, int sig)
+{
+	if (sig == 0)
+  {
+		kill(pid,SIGTERM);
+	}
+	else {
+		kill(pid, sig);
+	}
+} /* kill() */
+
 void newPromptPrefix(char *command, char *p) 
 {
   char buffer[BUFFERSIZE];
@@ -316,3 +368,4 @@ void printenv(char **envp)
     printf("%s \n", *(currEnv++));
   }
 } /* printenv() */
+

@@ -9,6 +9,7 @@ char *where(char *command, struct pathelement *pathlist);
 void list (char *dir);
 void printWD();
 void printPID();
+void killPID(pid_t pid, int sig);
 void newPromptPrefix(char *cmd, char *prompt);
 void printenv(char **envp);
 void printenv_arg(char **arg);
