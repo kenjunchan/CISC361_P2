@@ -41,8 +41,9 @@ int sh( int argc, char **argv, char **envp )
 {
   char *prompt = calloc(PROMPTMAX, sizeof(char));
   char *commandline = calloc(MAX_CANON, sizeof(char));
-  char *command, *arg, *commandpath, *p, *pwd, *owd;
+  char *command, *arg, *commandpath, *p, *pwd, *owd, *cwd;
   char **args = calloc(MAXARGS, sizeof(char*));
+  char **argsML = args;
   int uid, i, status, argsct, go = 1;
   struct passwd *password_entry;
   char *homedir;
@@ -59,10 +60,16 @@ int sh( int argc, char **argv, char **envp )
   }
   owd = calloc(strlen(pwd) + 1, sizeof(char));
   memcpy(owd, pwd, strlen(pwd));
+  cwd = calloc(strlen(pwd) + 1, sizeof(char));
+  memcpy(cwd, pwd, strlen(pwd));
   prompt[0] = ' '; prompt[1] = '\0';
 
   /* Put PATH into a linked list */
   pathlist = get_path();
+
+	signal(SIGINT, handleSigInt);
+	signal(SIGTSTP, handleSigStp);
+	signal(SIGTERM, handleSigStp);
 
   while ( go )
   {
@@ -77,14 +84,21 @@ int sh( int argc, char **argv, char **envp )
 
     inputToCharArray(buffer, args);
 
-    if (!strcmp(args[0],"exit"))
+    /* check for each built in command and implement */
+    if (!strcmp(args[0],"exit"))  
     {
-       printf("Executing built-in EXIT\n");
+      printf("exiting\n");
+      free(prompt);
+      free(commandline);
+      free(owd);
+      freeElement(pathlist);
+      free(argsML);
+      free(pwd);
 		  go=0;
 		}
-		else if (!strcmp(args[0],"which"))
+		else if (!strcmp(args[0],"which"))   
     {
-      printf("Executing built-in WHICH\n");
+      printf("executing built-in which\n");
 			if (args[1] == NULL)
 			{
 				printf("which: too few arguments\n");
@@ -115,7 +129,7 @@ int sh( int argc, char **argv, char **envp )
 		}
 		else if (!strcmp(args[0],"where"))
     {
-      printf("Executing built-in WHERE\n");
+      printf("executing built-in where\n");
       if (args[1] == NULL)
 			{
 				printf("where: too few arguments\n");
@@ -144,27 +158,70 @@ int sh( int argc, char **argv, char **envp )
         }   
       } 
     }
+    else if (!strcmp(args[0],"cd"))
+    {
+      printf("executing built-in cd\n");
+      if (args[2])
+      {
+				fprintf(stderr,"cd: too many arguments\n");
+			}
+			else if (args[1]) 
+      {
+				if (!strcmp(args[1],"-"))
+        {
+					strcpy(pwd,owd);
+					free(owd);
+					owd = getcwd(NULL,PATH_MAX+1);
+					chdir(pwd);
+				}
+				else 
+        {
+					free(pwd);
+					free(owd);
+					owd = getcwd (NULL, PATH_MAX+1);
+					chdir(args[1]);
+					pwd = getcwd(NULL, PATH_MAX+1);
+				}
+			}
+    }
     else if (!strcmp(args[0],"pwd"))
     {
-      printf("Executing built-in PWD\n");
+      printf("executing built-in pwd\n");
       printWD();
     }
     else if(!strcmp(args[0],"list"))
     {
-      printf("Executing built-in LIST\n");
+      printf("executing built-in list\n");
+      if ((args[1] == NULL) && (args[2] == NULL))
+			{
+				list(cwd);
+			}
+			else
+			{
+				for (int i = 1; i < MAXARGS; i++)
+				{
+					if (args[i] != NULL)
+					{
+						printf("[%s]:\n", args[i]);
+						list(args[i]);
+					}
+				}
+			}
     }
     else if(!strcmp(args[0],"pid"))
     {
-      printf("Executing built-in PID\n");
+      printf("executing built-in pid\n");
       printPID();
     }
     else if(!strcmp(args[0],"kill"))
     {
-      printf("Executing built-in KILL\n");
+      printf("executing built-in kill\n");
+      //one argument
       if (args[1] != NULL && args[2] == NULL)
 			{
 				killPID(atoi(args[1]), 0);
 			}
+      //two arguments
 			else if(args[1] != NULL && args[2] != NULL)
       {
 				killPID(atoi(args[2]), -1*atoi(args[1]));
@@ -172,20 +229,23 @@ int sh( int argc, char **argv, char **envp )
     }
     else if(!strcmp(args[0],"prompt"))
     {
-      printf("Executing built-in PROMPT\n");
+      printf("executing built-in prompt\n");
       newPromptPrefix(args[1],prompt);
     }
     else if(!strcmp(args[0],"printenv"))
     {
-      printf("Executing built-in PRINTENV\n");
+      printf("executing built-in printenv\n");
+      //zero arguments
       if (args[1] == NULL) 
       { 
         printenv(envp);
       }
+      //one argument
       else if((args[1] != NULL) && (args[2] == NULL)) 
       { 
         printf("%s\n", getenv(args[1]));
       }
+      //more than one argument
       else 
       {
         perror("printenv");
@@ -194,65 +254,62 @@ int sh( int argc, char **argv, char **envp )
     }
     else if(!strcmp(args[0],"setenv"))
     {
-      printf("Executing built-in SETENV\n");
+      printf("executing built-in setenv\n");
+      //zero arguments
       if(args[1] == NULL)
       {
         printenv(envp);
       }
+      //one argument
       else if((args[1] != NULL) && (args[2] == NULL)) 
       { 
-        printf("%s\n", setenv(args[1], "",1));
+        setenv(args[1], "",1);
       }
-      else if(args[1] != NULL && args[2] != NULL) 
+      //two arguments
+      else if((args[1] != NULL) && (args[2] != NULL) && (args[3] == NULL)) 
       {
         setenv(args[1],args[2],1);
 
+        if(!strcmp(args[1], "HOME")) 
+        {
+					homedir = getenv("HOME");
+				}
 				if(!strcmp(args[1],"PATH")) 
         {
 					free(pathlist);
 					pathlist = get_path();
 				}
-				if (strcmp(args[1], "HOME") == 0) 
-        {
-					homedir = getenv("HOME");
-				}
 			}
+      //more than two arguments
       else 
       { 
 				perror("setenv");
 				printf("setenv: too many arguments\n");
 			}
     }
+    /*  else  program to exec */
 		else
     {
-			//call which to get the absolute path
+      /* find it */
+			//get the absolute path from which
 			char* cmd=which(args[0],pathlist);
 			int pid=fork();
+      /* do fork(), execve() and waitpid() */
 			if (pid)
       {
 				free(cmd);
 				waitpid(pid,NULL,0);
 			}
-			else{
-				//try to exec the absolute path
-				execve(cmd,args,envp);
-				printf("exec %s\n",args[0]);
-				exit(0);
+      /* else */
+			else
+      {
+				if (execve(cmd, args, envp) < 0)
+				{
+					fprintf(stderr, "%s: command not found.\n", args[0]);
+					exit(0);
+				}
 			}
 		}
-
-    /* check for each built in command and implement */
-
-    /*  else  program to exec */
-    
-    /* find it */
-    
-    /* do fork(), execve() and waitpid() */
-
-    /* else */
-    
-    /* fprintf(stderr, "%s: Command not found.\n", args[0]); */
-    
   }
   return 0;
 } /* sh() */
@@ -300,7 +357,7 @@ void printWD()
   printf("%s\n", cwd);
 } /* printWD() */
 
-void list ( char *dir )
+void list (char *dir)
 {
   /* see man page for opendir() and readdir() and print out filenames for
   the directory passed */
@@ -309,7 +366,7 @@ void list ( char *dir )
   dr = opendir(dir);
   if (dr == NULL) 
   {
-    printf("Cannot open %s\n", dir);
+    perror(dir);
   } 
   else 
   {
@@ -333,7 +390,8 @@ void killPID(pid_t pid, int sig)
   {
 		kill(pid,SIGTERM);
 	}
-	else {
+	else 
+  {
 		kill(pid, sig);
 	}
 } /* kill() */
@@ -369,3 +427,31 @@ void printenv(char **envp)
   }
 } /* printenv() */
 
+void freeElement(struct pathelement *pathElement)
+{
+  struct pathelement* currPath = pathElement;
+  while(currPath!=NULL)
+  {
+    struct pathelement* tmp = currPath->next;
+    free(currPath);
+    currPath = tmp;
+  }
+} /* freePathList() */
+
+/* signal handler for Ctrl+C */
+void handleSigInt(int sig)
+{
+	/* Reset handler to catch SIGINT next time.*/
+	signal(SIGINT, handleSigInt);
+	printf("cannot be terminated using Ctrl+C %d \n", waitpid(getpid(), NULL, 0));
+	fflush(stdout);
+	return;
+}
+
+/* signal handler for Ctrl+Z */
+void handleSigStp(int sig)
+{
+	signal(SIGTSTP, handleSigStp);
+	printf("cannot be terminated using Ctrl+Z \n");
+	fflush(stdout);
+}
