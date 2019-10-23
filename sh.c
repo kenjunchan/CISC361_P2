@@ -14,61 +14,12 @@
 
 char** getArgsFromInput(char *input)
 {
-  /*
-  char* temp;
-	temp=strtok(input," ");
-	if (temp==NULL)
-  {
-    cmds[0]=malloc(sizeof(char));
-		cmds[0][0]=0;
-		return;
-	}
-  
-  int len=strlen(temp);
-	cmds[0]=malloc(sizeof(char)*len+1);
-	strcpy(cmds[0],temp);
-	int i=1;
-	while ((temp=strtok(NULL," "))!=NULL)
-  {
-	  len=strlen(temp);
-		cmds[i]=malloc(sizeof(char)*len+1);
-		strcpy(cmds[i],temp);
-		i++;
-	}
-	cmds[i]=NULL;
-  */
-  
-  char* temp;
   char** cmds = calloc(MAXARGS, sizeof(char*));
-  /*
-	temp=strtok(input," ");
-	if (temp==NULL)
-  {
-    cmds[0]=malloc(sizeof(char));
-		cmds[0][0]=0;
-		return cmds;
-	}
-  
-  int len=strlen(temp);
-	cmds[0]=malloc(sizeof(char)*len+1);
-	strcpy(cmds[0],temp);
-	int i=1;
-	while ((temp=strtok(NULL," "))!=NULL)
-  {
-	  len=strlen(temp);
-		cmds[i]=malloc(sizeof(char)*len+1);
-		strcpy(cmds[i],temp);
-		i++;
-	}
-	cmds[i]=NULL;
-  */
-  
   char* token = strtok(input, " ");
   int i = 0;
   while(token != NULL){
     int len=strlen(token);
     cmds[i] = malloc(sizeof(char)*len+1);
-    //cmds[i] = token;
     strcpy(cmds[i],token);
     token = strtok(NULL," ");
     i++;
@@ -77,13 +28,10 @@ char** getArgsFromInput(char *input)
 }
 
 void freeArgs(char** args){
-  int i = 0;
-  if(args!=NULL){
-  while(args[i]!=NULL){
-    free(args[i]);
-    i++;
-  }
-  }
+   for(int i = 0; i < MAXARGS; i++){
+     char* currentPtr = args[i];
+     free(currentPtr);
+   }
   free(args);
 }
 
@@ -118,54 +66,35 @@ int sh( int argc, char **argv, char **envp )
   }
   owd = calloc(strlen(pwd) + 1, sizeof(char));
   memcpy(owd, pwd, strlen(pwd));
-  /*
-  cwd = calloc(strlen(pwd) + 1, sizeof(char));
-  memcpy(cwd, pwd, strlen(pwd));
-  */
   prompt[0] = ' '; prompt[1] = '\0';
 
   /* Put PATH into a linked list */
   pathlist = get_path();
 
-  /*
+  
 	signal(SIGINT, handleSigInt);
 	signal(SIGTSTP, handleSigStp);
 	signal(SIGTERM, handleSigStp);
-  */
+  
   while ( go )
   {
     freeArgs(args);
-    signal(SIGINT, handleSigInt);
-	  signal(SIGTSTP, handleSigStp);
-	  signal(SIGTERM, handleSigStp);
-    //free(args);
     /* print your prompt */
     printf("%s [%s]>", prompt, pwd);
 
     /* get command line and process */
-    //args = NULL;
     char input[BUFFERSIZE];
-    //fgets (input, BUFFERSIZE, stdin);
-    char buff[BUFFERSIZE];
-		//int len = strlen(input);
-		//input[len-1]=0;
     if (fgets (input, BUFFERSIZE, stdin) == NULL)  
-    //if(input == NULL)
     {
-      printf("\n cannot Ctrl-D \n");
-      //free(args[0]);
-      //free(args);
-      //continue;
+      printf("\ncannot Ctrl-D\n");
     }
     else{
       args = getArgsFromInput(input);
       fixNewLines(args);
       command = args[0];
     }
+
     /* check for each built in command and implement */
-    
-    
-    
     if (strcmp(command,"exit") == 0)  
     {
       printf("Executing built-in exit\n");
@@ -173,12 +102,9 @@ int sh( int argc, char **argv, char **envp )
       free(commandline);
       free(owd);
       freePathElement(pathlist);
-      free(argsML);
       free(pwd);
-      free(cwd);
-      free(args);
       freeArgs(args);
-		  go=0;
+		  go = 0;
 		}
 		else if (strcmp(command,"which") == 0)   
     {
@@ -189,28 +115,6 @@ int sh( int argc, char **argv, char **envp )
 			}
 			else
 			{
-        /*
-        for (int i = 1; i < MAXARGS; i++) 
-        {
-          if (args[i] != NULL)
-          {
-            char *path = which(args[i], pathlist);
-            if (path != NULL) 
-            {
-              printf("%s\n", path);
-              free(path);
-            } 
-            else 
-            {
-              printf("%s %s: not found\n", args[0], args[i]);
-            }
-          }
-          else
-          {
-            break;
-          }
-        }
-        */
         int argNumber = 1;
         while(args[argNumber] != NULL){
           char *path = which(args[argNumber], pathlist);
@@ -236,28 +140,6 @@ int sh( int argc, char **argv, char **envp )
 			}
 			else
 			{
-        /*
-        for (int i = 1; i < MAXARGS; i++) 
-        {
-          if (args[i] != NULL)
-          {
-            char *path = where(args[i], pathlist);
-            if (path != NULL) 
-            {
-              printf("%s\n", path);
-              free(path);
-            } 
-            else 
-            {
-              printf("%s %s: not found\n", args[0], args[i]);
-            }
-          }
-          else
-          {
-            break;
-          }
-        }  
-        */
         int argNumber = 1;
         while(args[argNumber] != NULL){
           char *path = where(args[argNumber], pathlist);
@@ -303,9 +185,6 @@ int sh( int argc, char **argv, char **envp )
     else if (strcmp(command,"pwd") == 0)
     {
       printf("Executing built-in pwd\n");
-      //char* currentWorkingDirectory = getWorkingDirectory();
-      //printf("%s\n", currentWorkingDirectory);
-      //free(currentWorkingDirectory);
       printWorkingDirectory();
     }
     else if(strcmp(command,"list") == 0)
@@ -313,7 +192,6 @@ int sh( int argc, char **argv, char **envp )
       printf("Executing built-in list\n");
       if ((args[1] == NULL) && (args[2] == NULL))
 			{
-        //list(cwd);
 				list(owd);
 			}
 			else
@@ -331,7 +209,6 @@ int sh( int argc, char **argv, char **envp )
     else if(strcmp(command,"pid") == 0)
     {
       printf("Executing built-in pid\n");
-      //printPID();
       printf("shell PID: %d\n", getPID());
     }
     else if(strcmp(command,"kill") == 0)
@@ -349,59 +226,50 @@ int sh( int argc, char **argv, char **envp )
     else if(strcmp(command,"prompt") == 0)
     {
       printf("Executing built-in prompt\n");
-      //newPromptPrefix(args[1],prompt);
-      //prompt = newPromptPrefix(args[1],prompt);
       changePrompt(args,prompt);
     }
     else if(strcmp(command,"printenv") == 0)
     {
       printf("Executing built-in printenv\n");
-      //zero arguments
       if (args[1] == NULL) 
       { 
         printenv(envp);
       }
-      //one argument
       else if((args[1] != NULL) && (args[2] == NULL)) 
       { 
         printf("%s\n", getenv(args[1]));
       }
-      //more than one argument
       else 
       {
-        perror("printenv");
         printf("printenv: too many arguments\n");
       }
     }
     else if(strcmp(command,"setenv") == 0)
     {
       printf("Executing built-in setenv\n");
-      //zero arguments
       if(args[1] == NULL)
       {
         printenv(envp);
       }
-      //one argument
       else if((args[1] != NULL) && (args[2] == NULL)) 
       { 
         setenv(args[1], "",1);
       }
-      //two arguments
       else if((args[1] != NULL) && (args[2] != NULL) && (args[3] == NULL)) 
       {
         setenv(args[1],args[2],1);
 
-        if(!strcmp(args[1], "HOME")) 
+        if(strcmp(args[1], "HOME") == 0) 
         {
 					homedir = getenv("HOME");
 				}
-				if(!strcmp(args[1],"PATH")) 
+				if(strcmp(args[1],"PATH") == 0) 
         {
-					free(pathlist);
+					freePathElement(pathlist);
+          free(pathlist);
 					pathlist = get_path();
 				}
 			}
-      //more than two arguments
       else 
       { 
 				perror("setenv");
@@ -412,10 +280,8 @@ int sh( int argc, char **argv, char **envp )
 		else
     {
       /* find it */
-			//get the absolute path from which
 			char* cmd=which(args[0],pathlist);
 			int pid=fork();
-      /* do fork(), execve() and waitpid() */
 			if (pid)
       {
 				free(cmd);
@@ -433,8 +299,6 @@ int sh( int argc, char **argv, char **envp )
 				}
 			}
 		}
-    //free(args);
-    //args = NULL;
   }
   return 0;
 } /* sh() */
@@ -478,7 +342,6 @@ char *where(char *command, struct pathelement *pathlist )
 void printWorkingDirectory()
 {
   char currentWorkingDirectory[256];
-	//char cwd[PATH_MAX];
 	getcwd(currentWorkingDirectory, sizeof(currentWorkingDirectory));
   printf("%s\n", currentWorkingDirectory);
 } /* printWorkingDirectory() */
@@ -494,29 +357,12 @@ void list (char *dir)
     {
       printf("%s\n", de->d_name);
     }
-  /*
-  if (directory == NULL) 
-  {
-    perror(dir);
-  } 
-  else 
-  {
-    while ((de = readdir(directory)) != NULL) 
-    {
-      printf("%s\n", de->d_name);
-    }
-  }
-  */
   closedir(directory);
 } /* list() */
 
 int getPID()
 {
   return getpid();
-  /*
-  int pid = getpid();
-  printf("shell PID: %d\n", pid);
-  */
 } /* getPID() */
 
 void killProcess(pid_t pid, int sig)
@@ -531,38 +377,7 @@ void killProcess(pid_t pid, int sig)
 	}
 } /* killProcess() */
 
-/*
-char* newPromptPrefix(char *command1, char *p) 
-{
-  
-  char buffer[BUFFERSIZE];
-  int len;
-  char* command = malloc(sizeof(char) * PROMPTMAX);
-  if (command1 == NULL) 
-  {
-    //command = malloc(sizeof(char) * PROMPTMAX);
-    printf("input new prompt prefix: ");
-    if (fgets(buffer, BUFFERSIZE, stdin) != NULL) {
-    len = (int) strlen(buffer);
-    buffer[len - 1] = '\0';
-    strcpy(command, buffer);
-    }
-    //strcpy(p, command);
-    //free(command);
-    return command;
-  }
-  else 
-  {
-    //strcpy(p, command);
-   //printf("%s\n", command);
-    strcpy(command, command1);
-    return command;
-  }
-  
-} /* newPromptPrefix() */
-
 void changePrompt(char** args, char* promptAddress){
-  //char* newPrompt = (char*)calloc(PROMPTMAX,sizeof(char));
   if(args[1] == NULL)
   {
     printf("input new prompt prefix: ");
@@ -573,21 +388,11 @@ void changePrompt(char** args, char* promptAddress){
   else
   {
     strcpy(promptAddress, args[1]);
-    //promptAddress = args[1];
   }
-  //strcpy(promptAddress,newPrompt);
-  //free(newPrompt);
 } /* changePrompt() */
 
 void printenv(char **envp)
 {
-  /*
-  char **currEnv = envp;
-  while (*currEnv)
-  {
-    printf("%s \n", *(currEnv++));
-  }
-  */
   int i = 0;
   while(envp[i] != NULL){
     printf("%s\n",envp[i]);
@@ -611,7 +416,7 @@ void handleSigInt(int sig)
 {
 	/* Reset handler to catch SIGINT next time.*/
 	signal(SIGINT, handleSigInt);
-	printf("cannot be terminated using Ctrl+C %d \n", waitpid(getpid(), NULL, 0));
+	printf("\ncannot be terminated using Ctrl+C %d", waitpid(getPID(), NULL, 0));
 	fflush(stdout);
 	return;
 }
@@ -620,6 +425,6 @@ void handleSigInt(int sig)
 void handleSigStp(int sig)
 {
 	signal(SIGTSTP, handleSigStp);
-	printf("cannot be terminated using Ctrl+Z \n");
+	printf("\ncannot be terminated using Ctrl+Z");
 	fflush(stdout);
 }
