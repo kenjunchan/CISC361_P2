@@ -9,15 +9,15 @@ int sh( int argc, char **argv, char **envp);
 char *which(char *command, struct pathelement *pathlist);
 char *where(char *command, struct pathelement *pathlist);
 void list (char *dir);
-void printWD();
-void printPID();
+void printWorkingDirectory();
+int getPID();
 void freeArgs(char** args);
 void fixNewLines(char** args);
 void killPID(pid_t pid, int sig);
 void newPromptPrefix(char *cmd, char *prompt);
 void printenv(char **envp);
 void printenv_arg(char **arg);
-void freeElement(struct pathelement *pathElement);
+void freePathElement(struct pathelement *pathElement);
 void handleSigInt(int sig);
 void handleSigStp(int sig);
 

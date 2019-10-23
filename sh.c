@@ -138,20 +138,34 @@ int sh( int argc, char **argv, char **envp )
     /* get command line and process */
     //args = NULL;
     char input[BUFFERSIZE];
-    fgets (input, BUFFERSIZE, stdin);
+    //fgets (input, BUFFERSIZE, stdin);
+    char buff[BUFFERSIZE];
 		//int len = strlen(input);
 		//input[len-1]=0;
+    if (fgets (input, BUFFERSIZE, stdin) == NULL)  
+    //if(input == NULL)
+    {
+      printf("\n cannot Ctrl-D \n");
+      //free(args[0]);
+      //free(args);
+      //continue;
+    }
+    else{
     args = getArgsFromInput(input);
     fixNewLines(args);
     command = args[0];
+    }
     /* check for each built in command and implement */
-    if (strcmp(command,"exit") == 0)  
+    
+    
+    
+     if (strcmp(command,"exit") == 0)  
     {
       printf("Executing built-in exit\n");
       free(prompt);
       free(commandline);
       free(owd);
-      freeElement(pathlist);
+      freePathElement(pathlist);
       free(argsML);
       free(pwd);
       free(cwd);
@@ -215,6 +229,7 @@ int sh( int argc, char **argv, char **envp )
 			}
 			else
 			{
+        /*
         for (int i = 1; i < MAXARGS; i++) 
         {
           if (args[i] != NULL)
@@ -234,7 +249,22 @@ int sh( int argc, char **argv, char **envp )
           {
             break;
           }
-        }   
+        }  
+        */
+        int argNumber = 1;
+        while(args[argNumber] != NULL){
+          char *path = where(args[argNumber], pathlist);
+          if (path != NULL) 
+          {
+           printf("%s\n", path);
+           free(path);
+          } 
+          else 
+         {
+           printf("%s %s: not found\n", args[0], args[argNumber]);
+          }
+          argNumber++;
+        }
       } 
     }
     else if (strcmp(command,"cd") == 0)
@@ -266,7 +296,10 @@ int sh( int argc, char **argv, char **envp )
     else if (strcmp(command,"pwd") == 0)
     {
       printf("Executing built-in pwd\n");
-      printWD();
+      //char* currentWorkingDirectory = getWorkingDirectory();
+      //printf("%s\n", currentWorkingDirectory);
+      //free(currentWorkingDirectory);
+      printWorkingDirectory();
     }
     else if(strcmp(command,"list") == 0)
     {
@@ -291,7 +324,8 @@ int sh( int argc, char **argv, char **envp )
     else if(strcmp(command,"pid") == 0)
     {
       printf("Executing built-in pid\n");
-      printPID();
+      //printPID();
+      printf("shell PID: %d\n", getPID());
     }
     else if(strcmp(command,"kill") == 0)
     {
@@ -434,12 +468,13 @@ char *where(char *command, struct pathelement *pathlist )
   return NULL;
 } /* where() */
 
-void printWD()
+void printWorkingDirectory()
 {
-	char cwd[PATH_MAX];
-	getcwd(cwd, sizeof(cwd));
-  printf("%s\n", cwd);
-} /* printWD() */
+  char currentWorkingDirectory[256];
+	//char cwd[PATH_MAX];
+	getcwd(currentWorkingDirectory, sizeof(currentWorkingDirectory));
+  printf("%s\n", currentWorkingDirectory);
+} /* printWorkingDirectory() */
 
 void list (char *dir)
 {
@@ -462,10 +497,13 @@ void list (char *dir)
   closedir(dr);
 } /* list() */
 
-void printPID()
+int getPID()
 {
+  return getpid();
+  /*
   int pid = getpid();
   printf("shell PID: %d\n", pid);
+  */
 } /* printPID() */
 
 void killPID(pid_t pid, int sig)
@@ -511,14 +549,14 @@ void printenv(char **envp)
   }
 } /* printenv() */
 
-void freeElement(struct pathelement *pathElement)
+void freePathElement(struct pathelement *pathElement)
 {
-  struct pathelement* currPath = pathElement;
-  while(currPath!=NULL)
+  struct pathelement* currentPath = pathElement;
+  while(currentPath!=NULL)
   {
-    struct pathelement* tmp = currPath->next;
-    free(currPath);
-    currPath = tmp;
+    struct pathelement* tmp = currentPath->next;
+    free(currentPath);
+    currentPath = tmp;
   }
 } /* freePathList() */
 
