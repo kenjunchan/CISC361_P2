@@ -127,13 +127,17 @@ int sh( int argc, char **argv, char **envp )
   /* Put PATH into a linked list */
   pathlist = get_path();
 
+  /*
 	signal(SIGINT, handleSigInt);
 	signal(SIGTSTP, handleSigStp);
 	signal(SIGTERM, handleSigStp);
-
+  */
   while ( go )
   {
     freeArgs(args);
+    signal(SIGINT, handleSigInt);
+	  signal(SIGTSTP, handleSigStp);
+	  signal(SIGTERM, handleSigStp);
     //free(args);
     /* print your prompt */
     printf("%s [%s]>", prompt, pwd);
@@ -333,15 +337,13 @@ int sh( int argc, char **argv, char **envp )
     else if(strcmp(command,"kill") == 0)
     {
       printf("Executing built-in kill\n");
-      //one argument
       if (args[1] != NULL && args[2] == NULL)
 			{
-				killPID(atoi(args[1]), 0);
+				killProcess(atoi(args[1]), 0);
 			}
-      //two arguments
 			else if(args[1] != NULL && args[2] != NULL)
       {
-				killPID(atoi(args[2]), -1*atoi(args[1]));
+				killProcess(atoi(args[2]), -1 * atoi(args[1]));
 			}
     }
     else if(strcmp(command,"prompt") == 0)
@@ -485,21 +487,27 @@ void list (char *dir)
 {
   /* see man page for opendir() and readdir() and print out filenames for
   the directory passed */
-  DIR *dr;
+  DIR *directory;
   struct dirent *de;
-  dr = opendir(dir);
-  if (dr == NULL) 
+  directory = opendir(dir);
+  while ((de = readdir(directory)) != NULL) 
+    {
+      printf("%s\n", de->d_name);
+    }
+  /*
+  if (directory == NULL) 
   {
     perror(dir);
   } 
   else 
   {
-    while ((de = readdir(dr)) != NULL) 
+    while ((de = readdir(directory)) != NULL) 
     {
       printf("%s\n", de->d_name);
     }
   }
-  closedir(dr);
+  */
+  closedir(directory);
 } /* list() */
 
 int getPID()
@@ -509,9 +517,9 @@ int getPID()
   int pid = getpid();
   printf("shell PID: %d\n", pid);
   */
-} /* printPID() */
+} /* getPID() */
 
-void killPID(pid_t pid, int sig)
+void killProcess(pid_t pid, int sig)
 {
 	if (sig == 0)
   {
@@ -521,8 +529,9 @@ void killPID(pid_t pid, int sig)
   {
 		kill(pid, sig);
 	}
-} /* kill() */
+} /* killProcess() */
 
+/*
 char* newPromptPrefix(char *command1, char *p) 
 {
   
@@ -568,14 +577,21 @@ void changePrompt(char** args, char* promptAddress){
   }
   //strcpy(promptAddress,newPrompt);
   //free(newPrompt);
-}
+} /* changePrompt() */
 
 void printenv(char **envp)
 {
+  /*
   char **currEnv = envp;
   while (*currEnv)
   {
     printf("%s \n", *(currEnv++));
+  }
+  */
+  int i = 0;
+  while(envp[i] != NULL){
+    printf("%s\n",envp[i]);
+    i++;
   }
 } /* printenv() */
 
