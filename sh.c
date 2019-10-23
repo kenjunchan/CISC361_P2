@@ -78,10 +78,13 @@ char** getArgsFromInput(char *input)
 
 void freeArgs(char** args){
   int i = 0;
+  if(args!=NULL){
   while(args[i]!=NULL){
     free(args[i]);
     i++;
   }
+  }
+  free(args);
 }
 
 void fixNewLines(char** args){
@@ -151,15 +154,15 @@ int sh( int argc, char **argv, char **envp )
       //continue;
     }
     else{
-    args = getArgsFromInput(input);
-    fixNewLines(args);
-    command = args[0];
+      args = getArgsFromInput(input);
+      fixNewLines(args);
+      command = args[0];
     }
     /* check for each built in command and implement */
     
     
     
-     if (strcmp(command,"exit") == 0)  
+    if (strcmp(command,"exit") == 0)  
     {
       printf("Executing built-in exit\n");
       free(prompt);
@@ -344,7 +347,9 @@ int sh( int argc, char **argv, char **envp )
     else if(strcmp(command,"prompt") == 0)
     {
       printf("Executing built-in prompt\n");
-      newPromptPrefix(args[1],prompt);
+      //newPromptPrefix(args[1],prompt);
+      //prompt = newPromptPrefix(args[1],prompt);
+      changePrompt(args,prompt);
     }
     else if(strcmp(command,"printenv") == 0)
     {
@@ -518,27 +523,52 @@ void killPID(pid_t pid, int sig)
 	}
 } /* kill() */
 
-void newPromptPrefix(char *command, char *p) 
+char* newPromptPrefix(char *command1, char *p) 
 {
+  
   char buffer[BUFFERSIZE];
   int len;
-  if (command == NULL) 
+  char* command = malloc(sizeof(char) * PROMPTMAX);
+  if (command1 == NULL) 
   {
-    command = malloc(sizeof(char) * PROMPTMAX);
-    printf("Input new prompt prefix: ");
+    //command = malloc(sizeof(char) * PROMPTMAX);
+    printf("input new prompt prefix: ");
     if (fgets(buffer, BUFFERSIZE, stdin) != NULL) {
     len = (int) strlen(buffer);
     buffer[len - 1] = '\0';
     strcpy(command, buffer);
     }
-    strcpy(p, command);
-    free(command);
+    //strcpy(p, command);
+    //free(command);
+    return command;
   }
   else 
   {
-    strcpy(p, command);
+    //strcpy(p, command);
+   //printf("%s\n", command);
+    strcpy(command, command1);
+    return command;
   }
+  
 } /* newPromptPrefix() */
+
+void changePrompt(char** args, char* promptAddress){
+  //char* newPrompt = (char*)calloc(PROMPTMAX,sizeof(char));
+  if(args[1] == NULL)
+  {
+    printf("input new prompt prefix: ");
+    fgets(promptAddress, BUFFERSIZE, stdin);
+    promptAddress[(int)strlen(promptAddress) - 1] = '\0';
+    
+  }
+  else
+  {
+    strcpy(promptAddress, args[1]);
+    //promptAddress = args[1];
+  }
+  //strcpy(promptAddress,newPrompt);
+  //free(newPrompt);
+}
 
 void printenv(char **envp)
 {
