@@ -12,8 +12,9 @@
 #include "sh.h"
 #define BUFFERSIZE 128
 
-void inputToCharArray(char *input,char** cmds)
+char** getArgsFromInput(char *input)
 {
+  /*
   char* temp;
 	temp=strtok(input," ");
 	if (temp==NULL)
@@ -34,7 +35,61 @@ void inputToCharArray(char *input,char** cmds)
 		strcpy(cmds[i],temp);
 		i++;
 	}
-		cmds[i]=NULL;
+	cmds[i]=NULL;
+  */
+  
+  char* temp;
+  char** cmds = calloc(MAXARGS, sizeof(char*));
+  /*
+	temp=strtok(input," ");
+	if (temp==NULL)
+  {
+    cmds[0]=malloc(sizeof(char));
+		cmds[0][0]=0;
+		return cmds;
+	}
+  
+  int len=strlen(temp);
+	cmds[0]=malloc(sizeof(char)*len+1);
+	strcpy(cmds[0],temp);
+	int i=1;
+	while ((temp=strtok(NULL," "))!=NULL)
+  {
+	  len=strlen(temp);
+		cmds[i]=malloc(sizeof(char)*len+1);
+		strcpy(cmds[i],temp);
+		i++;
+	}
+	cmds[i]=NULL;
+  */
+  
+  char* token = strtok(input, " ");
+  int i = 0;
+  while(token != NULL){
+    int len=strlen(token);
+    cmds[i] = malloc(sizeof(char)*len+1);
+    //cmds[i] = token;
+    strcpy(cmds[i],token);
+    token = strtok(NULL," ");
+    i++;
+  }
+  return cmds;
+}
+
+void freeArgs(char** args){
+  int i = 0;
+  while(args[i]!=NULL){
+    free(args[i]);
+    i++;
+  }
+}
+
+void fixNewLines(char** args){
+  int i = 0;
+  while(args[i]!=NULL){
+    strtok(args[i],"\n");
+    i++;
+  }
 }
 
 int sh( int argc, char **argv, char **envp )
@@ -60,8 +115,10 @@ int sh( int argc, char **argv, char **envp )
   }
   owd = calloc(strlen(pwd) + 1, sizeof(char));
   memcpy(owd, pwd, strlen(pwd));
+  /*
   cwd = calloc(strlen(pwd) + 1, sizeof(char));
   memcpy(cwd, pwd, strlen(pwd));
+  */
   prompt[0] = ' '; prompt[1] = '\0';
 
   /* Put PATH into a linked list */
@@ -73,38 +130,45 @@ int sh( int argc, char **argv, char **envp )
 
   while ( go )
   {
+    freeArgs(args);
+    //free(args);
     /* print your prompt */
-    printf("%s%s$", prompt, pwd);
+    printf("%s [%s]>", prompt, pwd);
 
     /* get command line and process */
-    char buffer[BUFFERSIZE];
-    fgets (buffer, BUFFERSIZE, stdin);
-		int len = strlen(buffer);
-		buffer[len-1]=0;
-
-    inputToCharArray(buffer, args);
-
+    //args = NULL;
+    char input[BUFFERSIZE];
+    fgets (input, BUFFERSIZE, stdin);
+		//int len = strlen(input);
+		//input[len-1]=0;
+    args = getArgsFromInput(input);
+    fixNewLines(args);
+    command = args[0];
     /* check for each built in command and implement */
-    if (!strcmp(args[0],"exit"))  
+    if (strcmp(command,"exit") == 0)  
     {
-      printf("exiting\n");
+      printf("Executing built-in exit\n");
       free(prompt);
       free(commandline);
       free(owd);
       freeElement(pathlist);
       free(argsML);
       free(pwd);
+      free(cwd);
+      free(args);
+      freeArgs(args);
 		  go=0;
 		}
-		else if (!strcmp(args[0],"which"))   
+		else if (strcmp(command,"which") == 0)   
     {
-      printf("executing built-in which\n");
+      printf("Executing built-in which\n");
 			if (args[1] == NULL)
 			{
 				printf("which: too few arguments\n");
 			}
 			else
 			{
+        /*
         for (int i = 1; i < MAXARGS; i++) 
         {
           if (args[i] != NULL)
@@ -117,7 +181,7 @@ int sh( int argc, char **argv, char **envp )
             } 
             else 
             {
-              printf("%s %s: not found\n", args[0], args[1]);
+              printf("%s %s: not found\n", args[0], args[i]);
             }
           }
           else
@@ -125,11 +189,26 @@ int sh( int argc, char **argv, char **envp )
             break;
           }
         }
+        */
+        int argNumber = 1;
+        while(args[argNumber] != NULL){
+          char *path = which(args[argNumber], pathlist);
+          if (path != NULL) 
+          {
+            printf("%s\n", path);
+            free(path);
+          } 
+          else 
+          {
+            printf("%s %s: not found\n", args[0], args[argNumber]);
+          }
+          argNumber++;
+        }
 			}
 		}
-		else if (!strcmp(args[0],"where"))
+		else if (strcmp(command,"where") == 0)
     {
-      printf("executing built-in where\n");
+      printf("Executing built-in where\n");
       if (args[1] == NULL)
 			{
 				printf("where: too few arguments\n");
@@ -148,7 +227,7 @@ int sh( int argc, char **argv, char **envp )
             } 
             else 
             {
-              printf("%s %s: not found\n", args[0], args[1]);
+              printf("%s %s: not found\n", args[0], args[i]);
             }
           }
           else
@@ -158,16 +237,16 @@ int sh( int argc, char **argv, char **envp )
         }   
       } 
     }
-    else if (!strcmp(args[0],"cd"))
+    else if (strcmp(command,"cd") == 0)
     {
-      printf("executing built-in cd\n");
+      printf("Executing built-in cd\n");
       if (args[2])
       {
 				fprintf(stderr,"cd: too many arguments\n");
 			}
 			else if (args[1]) 
       {
-				if (!strcmp(args[1],"-"))
+				if (strcmp(args[1],"-") == 0)
         {
 					strcpy(pwd,owd);
 					free(owd);
@@ -184,17 +263,18 @@ int sh( int argc, char **argv, char **envp )
 				}
 			}
     }
-    else if (!strcmp(args[0],"pwd"))
+    else if (strcmp(command,"pwd") == 0)
     {
-      printf("executing built-in pwd\n");
+      printf("Executing built-in pwd\n");
       printWD();
     }
-    else if(!strcmp(args[0],"list"))
+    else if(strcmp(command,"list") == 0)
     {
-      printf("executing built-in list\n");
+      printf("Executing built-in list\n");
       if ((args[1] == NULL) && (args[2] == NULL))
 			{
-				list(cwd);
+        //list(cwd);
+				list(owd);
 			}
 			else
 			{
@@ -208,14 +288,14 @@ int sh( int argc, char **argv, char **envp )
 				}
 			}
     }
-    else if(!strcmp(args[0],"pid"))
+    else if(strcmp(command,"pid") == 0)
     {
-      printf("executing built-in pid\n");
+      printf("Executing built-in pid\n");
       printPID();
     }
-    else if(!strcmp(args[0],"kill"))
+    else if(strcmp(command,"kill") == 0)
     {
-      printf("executing built-in kill\n");
+      printf("Executing built-in kill\n");
       //one argument
       if (args[1] != NULL && args[2] == NULL)
 			{
@@ -227,14 +307,14 @@ int sh( int argc, char **argv, char **envp )
 				killPID(atoi(args[2]), -1*atoi(args[1]));
 			}
     }
-    else if(!strcmp(args[0],"prompt"))
+    else if(strcmp(command,"prompt") == 0)
     {
-      printf("executing built-in prompt\n");
+      printf("Executing built-in prompt\n");
       newPromptPrefix(args[1],prompt);
     }
-    else if(!strcmp(args[0],"printenv"))
+    else if(strcmp(command,"printenv") == 0)
     {
-      printf("executing built-in printenv\n");
+      printf("Executing built-in printenv\n");
       //zero arguments
       if (args[1] == NULL) 
       { 
@@ -252,9 +332,9 @@ int sh( int argc, char **argv, char **envp )
         printf("printenv: too many arguments\n");
       }
     }
-    else if(!strcmp(args[0],"setenv"))
+    else if(strcmp(command,"setenv") == 0)
     {
-      printf("executing built-in setenv\n");
+      printf("Executing built-in setenv\n");
       //zero arguments
       if(args[1] == NULL)
       {
@@ -305,11 +385,15 @@ int sh( int argc, char **argv, char **envp )
       {
 				if (execve(cmd, args, envp) < 0)
 				{
-					fprintf(stderr, "%s: command not found.\n", args[0]);
+          if(strcmp(strtok(args[0],"\n"),"")!=0){
+					  fprintf(stderr, "%s: command not found.\n", args[0]);
+          }
 					exit(0);
 				}
 			}
 		}
+    //free(args);
+    //args = NULL;
   }
   return 0;
 } /* sh() */

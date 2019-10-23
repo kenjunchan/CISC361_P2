@@ -14,3 +14,9 @@ get_path.o: get_path.c get_path.h
 
 clean:
 	rm -rf sh.o get_path.o mysh
+
+run: mysh
+	./mysh
+
+val: mysh
+	valgrind --leak-check=full --show-leak-kinds=all ./mysh
